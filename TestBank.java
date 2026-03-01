@@ -114,6 +114,38 @@ public class TestBank {
         System.out.println("Execution Time: " + (statementEnd - statementStart) + " ms");
         statementDemoBank.showStatement(101);
         statementDemoBank.showStatement(102);
+
+        System.out.println("\n=== Notification Test ===");
+        statementDemoBank.sendNotifications();
+
+        /* 
+         * This part of the test is designed to intentionally cause a StackOverflowError by performing 
+         * recursive transfers between two accounts. The test verifies that the error is caught and that 
+         * the balances remain consistent after the error occurs.
+        */
+        System.out.println("\n=== StackOverflow Test (Bank Class) ===");
+        runBankStackOverflowTest();
+        
     }
 
+    private static void runBankStackOverflowTest() {
+        Bank overflowBank = new Bank();
+        overflowBank.addAccount(new BankAccount(201, 1_000_000_000));
+        overflowBank.addAccount(new BankAccount(202, 0));
+
+        try {
+            recursiveBankTransfer(overflowBank, 1);
+        } catch (StackOverflowError e) {
+            System.out.println("StackOverflowError caught successfully.");
+            System.out.println("Max recursion depth reached: " + maxDepthReached);
+            System.out.println("Balance 201: " + overflowBank.checkBalance(201));
+            System.out.println("Balance 202: " + overflowBank.checkBalance(202));
+        }
+    }
+
+    private static void recursiveBankTransfer(Bank bank, int depth) {
+        maxDepthReached = depth;
+        bank.transfer(201, 202, 1);
+        recursiveBankTransfer(bank, depth + 1);
+    }
 }
