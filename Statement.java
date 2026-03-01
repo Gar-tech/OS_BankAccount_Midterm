@@ -1,12 +1,13 @@
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Statement {
     
     // Thread-safe queue to hold transaction data
-    private final Queue<Transaction> transactionQueue;
+    private final ConcurrentLinkedQueue<Transaction> transactionQueue;
+    private final ReentrantLock lock = new ReentrantLock();
 
     public Statement() {
         this.transactionQueue = new ConcurrentLinkedQueue<>();
@@ -21,22 +22,30 @@ public class Statement {
     public void pruneStatement() {
         LocalDateTime threeMonthsAgo = LocalDateTime.now().minusMonths(3);
 
-        // Remove records older than three months, safely handling concurrent modifications
-        while (true) {
-            Transaction head = transactionQueue.poll();
-            if (head == null) {
-                // Queue is empty; nothing more to prune
-                break;
-            }
-            if (head.getDate().isBefore(threeMonthsAgo)) {
-                // Old record, drop it and continue pruning
-                continue;
-            }
-            // Not old enough: re-add to the queue and stop, as subsequent records will be newer
-            transactionQueue.add(head);
-            break;
+        // Fast check: if the queue is empty or the oldest transaction is recent enough, skip pruning
+        Transaction head = transactionQueue.peek();
+        if (head == null || !head.getDate().isBefore(threeMonthsAgo)) {
+            // No pruning needed
+            return;
         }
 
+        lock.lock();
+        try {
+            // Remove records older than three months, safely handling concurrent modifications
+            while (true) {
+                head = transactionQueue.peek();
+                if (head != null && head.getDate().isBefore(threeMonthsAgo)) {
+                    // Old transaction found, remove it
+                    transactionQueue.poll();
+                }
+                else {
+                    // No more old transactions to prune
+                    break;
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 
     // Generate a table format string from all transactions currently in the queue.
