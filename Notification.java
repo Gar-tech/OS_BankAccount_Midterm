@@ -7,9 +7,9 @@ public class Notification{
     private final String time;
     private boolean isRead;
 
-    public Notification(String title, String message){
+    public Notification(String msg, String title){
         this.title = title;
-        this.message = message;
+        this.message = msg;
         this.isRead = false;
         String pattern = "dd/MM/yyyy HH:mm:ss";
         LocalDateTime now = LocalDateTime.now();

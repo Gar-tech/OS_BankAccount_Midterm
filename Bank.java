@@ -1,13 +1,12 @@
 import java.time.LocalDateTime;
-import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class Bank implements AccountService, BankService, NotificationService {
 
     private final HashMap<Integer, BankAccount> accounts = new HashMap<>();
-    private final Deque<Notification> notifications = new ArrayDeque<>();
+    private final Deque<Notification> notifications = new ConcurrentLinkedDeque<>();
 
     /*
     Implementation of BankService methods, which handle the core banking operations.
@@ -50,6 +49,16 @@ public class Bank implements AccountService, BankService, NotificationService {
                 amount,
                 to.getBalance()
             );
+            pushNotification(
+                "Transferred " + amount + "baht to account " + toAcc +
+                ". New balance: " + from.getBalance() + " baht.",
+                "Transfer Successful"
+            );
+            pushNotification(
+                "Received " + amount + "baht from account " + fromAcc +
+                ". New balance: " + from.getBalance() + " baht.",
+                "Transfer Received"
+            );
         } catch (IllegalArgumentException e) {
             System.out.println(new StringBuilder().append("Error: Transfer failed. ").append(e.getMessage()).toString());
         }
@@ -69,6 +78,9 @@ public class Bank implements AccountService, BankService, NotificationService {
             amount,
             accounts.get(accountNumber).getBalance()
         );
+        pushNotification("Deposit of " + amount + " baht successful. New balance: " 
+            + accounts.get(accountNumber).getBalance() + " baht.", "Deposit Alert"
+        );
     }
 
     @Override
@@ -81,6 +93,9 @@ public class Bank implements AccountService, BankService, NotificationService {
                 "Withdraw",
                 amount,
                 accounts.get(accountNumber).getBalance()
+            );
+            pushNotification("Withdrawl of "+ amount + " baht successful. New balance: " 
+            + accounts.get(accountNumber).getBalance() + " baht.", "Withdrawal Alert"
             );
         } catch (IllegalArgumentException e) {
             System.out.println(new StringBuilder().append("Error: ").append(e.getMessage()).toString());
@@ -117,7 +132,23 @@ public class Bank implements AccountService, BankService, NotificationService {
                 amount,
                 to.getBalance()
             );
+
+            pushNotification(
+                "Transferred " + amount + "baht to account " + toAcc +
+                ". New balance: " + from.getBalance() + " baht.",
+                "Transfer Successful"
+            );
+            pushNotification(
+                "Received " + amount + "baht from account " + fromAcc +
+                ". New balance: " + from.getBalance() + " baht.",
+                "Transfer Received"
+            );
         } catch (IllegalArgumentException e) {
+            pushNotification(
+                "Transferred " + amount + "baht to account " + toAcc +
+                ". New balance: " + from.getBalance() + " baht.",
+                "Transfer Failed"
+            );
             System.out.println(new StringBuilder().append("Error: Transfer failed. ").append(e.getMessage()).toString());
         }
     }
@@ -131,6 +162,9 @@ public class Bank implements AccountService, BankService, NotificationService {
             amount,
             accounts.get(accountNumber).getBalance()
         );
+        pushNotification("Deposit of " + amount + " baht successful. New balance: " 
+            + accounts.get(accountNumber).getBalance() + " baht.", "Deposit Alert"
+        );
     }
 
     public void withdraw(int accountNumber, double amount, LocalDateTime date) {
@@ -143,7 +177,15 @@ public class Bank implements AccountService, BankService, NotificationService {
                 amount,
                 accounts.get(accountNumber).getBalance()
             );
+
+            pushNotification("Withdrawl of "+ amount + " baht successful. New balance: " 
+            + accounts.get(accountNumber).getBalance() + " baht.", "Withdrawal Alert"
+            );
         } catch (IllegalArgumentException e) {
+            pushNotification(
+                "Withdrawal of " + amount + "baht failed.",
+                "Withdrawal Failed"
+            );
             System.out.println(new StringBuilder().append("Error: ").append(e.getMessage()).toString());
         }
     }
@@ -160,7 +202,14 @@ public class Bank implements AccountService, BankService, NotificationService {
     @Override
     public void sendNotification(){
         Notification n = this.notifications.poll();
-        System.out.printf("%s \n %s", n.getTitle(), n.getMessage());
+        System.out.printf("%s \n %s\n", n.getTitle(), n.getMessage());
+    }
+
+    public void sendNotifications(){
+        while (!notifications.isEmpty()) {
+            sendNotification();
+            System.out.println(); // spacing
+        }
     }
 
     @Override
@@ -187,8 +236,6 @@ public class Bank implements AccountService, BankService, NotificationService {
 
     @Override
     public void clearAllNotification(){
-        for(Iterator itr = this.notifications.iterator(); itr.hasNext();){
-            this.notifications.pop();
-        }
+        notifications.clear();
     }
 }

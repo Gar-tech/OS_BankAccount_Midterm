@@ -112,6 +112,7 @@ public class TestBank {
         System.out.println("Execution Time: " + (statementEnd - statementStart) + " ms");
         statementDemoBank.showStatement(101);
         statementDemoBank.showStatement(102);
+        System.out.println("\n=== Notification Test ===");
+        statementDemoBank.sendNotifications();
     }
-
 }
