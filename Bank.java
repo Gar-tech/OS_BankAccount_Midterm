@@ -1,7 +1,7 @@
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Deque;
 import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
 
 public class Bank implements AccountService, BankService, NotificationService {
@@ -159,7 +159,8 @@ public class Bank implements AccountService, BankService, NotificationService {
 
     @Override
     public void sendNotification(){
-        System.out.printf("%s \n %s", notifications.peek().getTitle(), notifications.peek().getMessage());
+        Notification n = this.notifications.poll();
+        System.out.printf("%s \n %s", n.getTitle(), n.getMessage());
     }
 
     @Override
