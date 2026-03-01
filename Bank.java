@@ -1,9 +1,14 @@
 import java.time.LocalDateTime;
 import java.util.HashMap;
 
-public class Bank implements AccountService, BankService {
+public class Bank implements AccountService, BankService, NotificationService {
 
     private final HashMap<Integer, BankAccount> accounts = new HashMap<>();
+    private final Deque<Notification> notifications = new ArrayDeque<>();
+
+    /*
+    Implementation of BankService methods, which handle the core banking operations.
+    */
 
     @Override
     public void addAccount(BankAccount account) {
@@ -19,6 +24,37 @@ public class Bank implements AccountService, BankService {
             .append(account.getStatement().formatStatement())
             .toString());
     }
+
+    @Override
+    public void transfer(int fromAcc, int toAcc, double amount) {
+        BankAccount from = accounts.get(fromAcc);
+        BankAccount to = accounts.get(toAcc);
+
+        try {
+            from.withdraw(amount);
+            to.deposit(amount);
+            from.getStatement().addTransaction(
+                LocalDateTime.now(),
+                new StringBuilder().append("Transfer to account ").append(toAcc).toString(),
+                "Withdraw",
+                amount,
+                from.getBalance()
+            );
+            to.getStatement().addTransaction(
+                LocalDateTime.now(),
+                new StringBuilder().append("Received from account ").append(fromAcc).toString(),
+                "Deposit",
+                amount,
+                to.getBalance()
+            );
+        } catch (IllegalArgumentException e) {
+            System.out.println(new StringBuilder().append("Error: Transfer failed. ").append(e.getMessage()).toString());
+        }
+    }
+
+    /*
+    Implementation of AccountService methods, which handle account-specific operations.
+    */
 
     @Override
     public void deposit(int accountNumber, double amount) {
@@ -53,8 +89,11 @@ public class Bank implements AccountService, BankService {
         return accounts.get(accountNumber).getBalance();
     }
 
-    @Override
-    public void transfer(int fromAcc, int toAcc, double amount) {
+    /*
+    * Overloaded methods for testing pruneStatement() with specific dates.
+    */
+
+    public void transfer(int fromAcc, int toAcc, double amount, LocalDateTime date) {
         BankAccount from = accounts.get(fromAcc);
         BankAccount to = accounts.get(toAcc);
 
@@ -62,14 +101,14 @@ public class Bank implements AccountService, BankService {
             from.withdraw(amount);
             to.deposit(amount);
             from.getStatement().addTransaction(
-                LocalDateTime.now(),
+                date,
                 new StringBuilder().append("Transfer to account ").append(toAcc).toString(),
                 "Withdraw",
                 amount,
                 from.getBalance()
             );
             to.getStatement().addTransaction(
-                LocalDateTime.now(),
+                date,
                 new StringBuilder().append("Received from account ").append(fromAcc).toString(),
                 "Deposit",
                 amount,
@@ -79,10 +118,6 @@ public class Bank implements AccountService, BankService {
             System.out.println(new StringBuilder().append("Error: Transfer failed. ").append(e.getMessage()).toString());
         }
     }
-
-    /*
-    * Overloaded methods for testing pruneStatement() with specific dates.
-    */
 
     public void deposit(int accountNumber, double amount, LocalDateTime date) {
         accounts.get(accountNumber).deposit(amount);
@@ -110,29 +145,46 @@ public class Bank implements AccountService, BankService {
         }
     }
 
-    public void transfer(int fromAcc, int toAcc, double amount, LocalDateTime date) {
-        BankAccount from = accounts.get(fromAcc);
-        BankAccount to = accounts.get(toAcc);
+    /*
+    Implementation of NotificationService methods, which handle user notifications.
+    */
+    
+    @Override
+    public Notification getNotification(){
+        return this.notifications.peek();
+    }
 
-        try {
-            from.withdraw(amount);
-            to.deposit(amount);
-            from.getStatement().addTransaction(
-                date,
-                new StringBuilder().append("Transfer to account ").append(toAcc).toString(),
-                "Withdraw",
-                amount,
-                from.getBalance()
-            );
-            to.getStatement().addTransaction(
-                date,
-                new StringBuilder().append("Received from account ").append(fromAcc).toString(),
-                "Deposit",
-                amount,
-                to.getBalance()
-            );
-        } catch (IllegalArgumentException e) {
-            System.out.println(new StringBuilder().append("Error: Transfer failed. ").append(e.getMessage()).toString());
+    @Override
+    public void sendNotification(){
+        System.out.printf("%s \n %s", notifications.peek().getTitle(), notifications.peek().getMessage());
+    }
+
+    @Override
+    public void pushNotification(){
+        Notification n = new Notification("testMsg", "testTitle");
+        this.notifications.add(n);
+    }
+
+    @Override
+    public void pushNotification(String msg, String title){
+        Notification n = new Notification(msg, title);
+        this.notifications.add(n);
+    }
+
+    @Override
+    public void markAsRead(Notification n){
+        for(Notification i: this.notifications){
+            if(i.getTitle().equals(n.getTitle())){
+                i.setIsRead(true);
+                return;
+            }
+        }
+    }
+
+    @Override
+    public void clearAllNotification(){
+        for(Iterator itr = this.notifications.iterator(); itr.hasNext();){
+            this.notifications.pop();
         }
     }
 }
