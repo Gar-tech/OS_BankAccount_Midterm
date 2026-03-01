@@ -56,13 +56,13 @@ public class Statement {
 
         StringBuilder sb = new StringBuilder();
 
-        String separator = "-".repeat(87);
+        String separator = "-".repeat(100);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
         // Header
         sb.append(separator).append("\n");
-        sb.append(String.format("%-20s %-22s %12s %12s %12s\n",
-                "Date", "Detail", "Withdraw", "Deposit", "Balance"));
+        sb.append(String.format("%-25s %-25s %15s %15s %15s\n",
+            "Date", "Detail", "Withdraw", "Deposit", "Balance"));
         sb.append(separator).append("\n");
 
         // Process the queue
@@ -70,12 +70,12 @@ public class Statement {
             String withdraw = "Withdraw".equals(t.getType()) ? String.format("%.2f", t.getAmount()) : "";
             String deposit = "Deposit".equals(t.getType()) ? String.format("%.2f", t.getAmount()) : "";
 
-            sb.append(String.format("%-20s %-22s %12s %12s %12.2f\n",
-                    t.getDate().format(formatter),
-                    t.getDetail(),
-                    withdraw,
-                    deposit,
-                    t.getBalance()));
+            sb.append(String.format("%-25s %-25s %15s %15s %15.2f\n",
+                t.getDate().format(formatter),
+                t.getDetail(),
+                withdraw,
+                deposit,
+                t.getBalance()));
         }
 
         sb.append(separator).append("\n");
