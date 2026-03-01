@@ -5,11 +5,13 @@ public class BankAccount {
     private int accountNumber;
     private double balance;
     private final ReentrantLock lock = new ReentrantLock();
-
+    // We use a lock to prevent "Race Conditions" 
+    // (where two threads try to change the balance at the exact same microsecond)
     public BankAccount(int accountNumber, double balance) {
         this.accountNumber = accountNumber;
         this.balance = balance;
     }
+    
 
     public int getAccountNumber() {
         return accountNumber;
@@ -38,4 +40,5 @@ public class BankAccount {
             lock.unlock();
         }
     }
+
 }
